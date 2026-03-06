@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forger | Student Learning Community</title>
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --primary: #4f46e5; /* Indigo 600 */
+            --primary-hover: #4338ca;
+            --secondary: #ec4899; /* Pink 500 */
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+            --sidebar-width: 260px;
+            --header-height: 60px;
+        }
+
+        .dark-mode {
+            --bg-body: #111827;
+            --bg-card: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border: #374151;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; transition: background-color 0.2s, color 0.2s; }
+        body { background-color: var(--bg-body); color: var(--text-main); height: 100vh; overflow: hidden; }
+        a { text-decoration: none; color: var(--primary); cursor: pointer; }
+        ul { list-style: none; }
+        button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+        
+        /* --- UTILITIES --- */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .w-full { width: 100%; }
+        .text-center { text-align: center; }
+        .btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-outline { border: 1px solid var(--primary); color: var(--primary); background: transparent; }
+        .btn-ghost { background: transparent; color: var(--text-muted); }
+        .btn-ghost:hover { background: rgba(0,0,0,0.05); color: var(--text-main); }
+        .card { background: var(--bg-card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: var(--text-muted); }
+        .input-field { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-body); color: var(--text-main); }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #ddd; }
+        .avatar-lg { width: 80px; height: 80px; }
+
+        /* --- SCROLLBAR --- */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        /* --- LANDING & AUTH --- */
+        #landing-view, #auth-view { height: 100vh; overflow-y: auto; text-align: center; }
+        .hero { padding: 80px 20px; max-width: 800px; margin: 0 auto; }
+        .hero h1 { font-size: 3rem; margin-bottom: 20px; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 1.2rem; color: var(--text-muted); margin-bottom: 30px; line-height: 1.6; }
+        .auth-container { max-width: 400px; margin: 60px auto; }
+
+        /* --- DASHBOARD LAYOUT --- */
+        #app-view { display: flex; height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-width); background: var(--bg-card); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; flex-shrink: 0; }
+        .brand { font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+        .nav-menu { flex: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px; color: var(--text-muted); border-radius: 8px; cursor: pointer; margin-bottom: 5px; }
+        .nav-item:hover, .nav-item.active { background: rgba(79, 70, 229, 0.1); color: var(--primary); font-weight: 600; }
+        
+        /* Main Content */
+        .main-content { flex: 1; overflow-y: auto; position: relative; }
+        .top-bar { height: var(--header-height); background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 0 20px; position: sticky; top: 0; z-index: 10; }
+        .page-content { padding: 20px; max-width: 1000px; margin: 0 auto; }
+        
+        /* Notifications Panel */
+        .notif-panel { position: absolute; top: 60px; right: 20px; width: 300px; max-height: 400px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); z-index: 20; }
+        .notif-item { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item:hover { background: var(--bg-body); }
+
+        /* --- SECTIONS --- */
+        /* Feed */
+        .post-card { margin-bottom: 20px; }
+        .post-header { margin-bottom: 10px; }
+        .post-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+        .post-body { color: var(--text-main); line-height: 1.5; margin-bottom: 15px; }
+        .post-actions { border-top: 1px solid var(--border); padding-top: 10px; display: flex; gap: 20px; }
+        .action-btn { display: flex; align-items: center; gap: 5px; color: var(--text-muted); cursor: pointer; }
+        .action-btn:hover { color: var(--primary); }
+        .comments-section { background: var(--bg-body); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.9rem; }
+        
+        /* Explore */
+        .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .user-card { text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .user-card .avatar-lg { margin-bottom: 10px; }
+        .user-card h3 { font-size: 1.1rem; }
+        .user-card span { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; display: block; }
+        .tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 15px; }
+        .tag { background: rgba(79, 70, 229, 0.1); color: var(--primary); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; }
+
+        /* Messages */
+        .msg-container { display: flex; height: calc(100vh - 100px); background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+        .msg-list { width: 300px; border-right: 1px solid var(--border); overflow-y: auto; }
+        .msg-thread { padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .msg-thread:hover, .msg-thread.active { background: var(--bg-body); }
+        .msg-window { flex: 1; display: flex; flex-direction: column; background: var(--bg-body); }
+        .chat-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message-bubble { padding: 10px 15px; border-radius: 15px; max-width: 70%; font-size: 0.95rem; }
+        .msg-me { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+        .msg-other { align-self: flex-start; background: #e5e7eb; color: black; border-bottom-left-radius: 2px; }
+        .dark-mode .msg-other { background: #374151; color: white; }
+        .chat-input-area { padding: 15px; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; gap: 10px; }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: -100%; top: 0; bottom: 0; z-index: 50; transition: left 0.3s; }
+            .sidebar.open { left: 0; }
+            .msg-container { flex-direction: column; }
+            .msg-list { width: 100%; height: 30%; }
+            .msg-window { height: 70%; }
+            .top-bar { padding: 0 10px; }
+            #mobile-menu-btn { display: block; }
+        }
+        @media (min-width: 769px) { #mobile-menu-btn { display: none; } }
+    </style>
+</head>
+<body>
+
+    <!-- === LANDING PAGE === -->
+    <section id="landing-view">
+        <nav class="flex justify-between items-center" style="padding: 20px 40px;">
+            <div class="brand">Forger.</div>
+            <div>
+                <button class="btn btn-ghost" onclick="app.router.go('auth', 'login')">Login</button>
+                <button class="btn btn-primary" onclick="app.router.go('auth', 'signup')">Get Started</button>
+            </div>
+        </nav>
+        <div class="hero">
+            <h1>Forge Your Future Together.</h1>
+            <p>A modern learning community where students connect, discuss ideas, solve problems, and grow together. Join the network today.</p>
+            <div class="flex gap-4 justify-center">
+                <button class="btn btn-primary" onclick="app.router.go('auth', 'signup')">Create Account</button>
+                <button class="btn btn-outline" onclick="app.router.go('explore')">Explore Community</button>
+            </div>
+        </div>
+        <div class="user-grid" style="max-width: 900px; margin: 0 auto; opacity: 0.6; pointer-events: none;">
+            <!-- Decorative Cards -->
+            <div class="card"><h3>Ask Questions</h3><p>Get answers from peers.</p></div>
+            <div class="card"><h3>Connect</h3><p>Find study partners.</p></div>
+            <div class="card"><h3>Grow</h3><p>Build your profile.</p></div>
+        </div>
+    </section>
+
+    <!-- === AUTHENTICATION === -->
+    <section id="auth-view" class="hidden">
+        <div class="brand" style="justify-content: center; margin-top: 40px;">Forger.</div>
+        <div class="auth-container card">
+            <h2 id="auth-title" style="margin-bottom: 20px;">Sign In</h2>
+            <form id="auth-form" onsubmit="app.auth.handleSubmit(event)">
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" id="username" class="input-field" required>
+                </div>
+                <!-- Email only for signup -->
+                <div class="input-group hidden" id="email-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" class="input-field">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="password" class="input-field" required>
+                    <small id="password-strength" style="color: var(--secondary); display:none;">Weak password</small>
+                </div>
+                <!-- Confirm only for signup -->
+                <div class="input-group hidden" id="confirm-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="confirm-password" class="input-field">
+                </div>
+                <div id="auth-error" style="color: red; margin-bottom: 15px; font-size: 0.9rem;"></div>
+                <button type="submit" class="btn btn-primary w-full" id="auth-submit-btn">Login</button>
+            </form>
+            <div style="margin-top: 15px; font-size: 0.9rem;">
+                <span id="auth-switch-text">New here? </span>
+                <a id="auth-switch-link" onclick="app.auth.toggleMode()">Create an account</a>
+            </div>
+            <br>
+            <a onclick="app.router.go('landing')" style="font-size: 0.85rem;">&larr; Back to Home</a>
+        </div>
+    </section>
+
+    <!-- === MAIN APP DASHBOARD === -->
+    <section id="app-view" class="hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <span>Forger.</span>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-item active" onclick="app.router.go('dashboard')">🏠 Home</div>
+                <div class="nav-item" onclick="app.router.go('explore')">🌍 Explore Users</div>
+                <div class="nav-item" onclick="app.router.go('messages')">💬 Messages</div>
+                <div class="nav-item" onclick="app.router.go('profile')">👤 My Profile</div>
+                <div class="nav-item" onclick="app.router.go('settings')">⚙️ Settings</div>
+            </div>
+            <div class="nav-item" onclick="app.auth.logout()">🚪 Logout</div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar flex justify-between items-center">
+                <button id="mobile-menu-btn" class="btn btn-ghost" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h3 id="page-title" style="font-weight: 600;">Dashboard</h3>
+                <div class="flex items-center gap-4">
+                    <div style="position: relative;">
+                        <button class="btn btn-ghost" onclick="document.getElementById('notif-panel').classList.toggle('hidden')">🔔 <span id="notif-count" style="background:red; color:white; border-radius:50%; padding: 2px 5px; font-size: 10px;">0</span></button>
+                        <!-- Notifications Dropdown -->
+                        <div id="notif-panel" class="notif-panel hidden">
+                            <div style="padding: 10px; font-weight: bold; border-bottom: 1px solid var(--border);">Notifications</div>
+                            <div id="notif-list">
+                                <div class="notif-item text-muted">No new notifications</div>
+                            </div>
+                        </div>
+                    </div>
+                    <img id="nav-avatar" src="" class="avatar" alt="User">
+                </div>
+            </div>
+
+            <!-- Page Content Views -->
+            <div class="page-content">
+                
+                <!-- 1. FEED / HOME -->
+                <div id="view-dashboard" class="view-section">
+                    <div class="card" style="margin-bottom: 20px;">
+                        <div class="flex gap-2">
+                            <img id="post-input-avatar" src="" class="avatar">
+                            <input type="text" id="new-post-title" class="input-field" placeholder="Question Title..." style="margin-bottom: 5px;">
+                        </div>
+                        <textarea id="new-post-content" class="input-field" placeholder="What's on your mind? Describe your question..." rows="3" style="margin-top: 5px;"></textarea>
+                        <div class="text-center" style="margin-top: 10px; text-align: right;">
+                            <button class="btn btn-primary" onclick="app.posts.create()">Post Question</button>
+                        </div>
+                    </div>
+                    <div id="feed-container">
+                        <!-- Posts injected here -->
+                    </div>
+                </div>
+
+                <!-- 2. EXPLORE -->
+                <div id="view-explore" class="view-section hidden">
+                    <div class="input-group">
+                        <input type="text" id="search-users" class="input-field" placeholder="Search students by name or skill..." onkeyup="app.explore.search(this.value)">
+                    </div>
+                    <div id="users-grid" class="user-grid">
+                        <!-- Users injected here -->
+                    </div>
+                </div>
+
+                <!-- 3. MESSAGES -->
+                <div id="view-messages" class="view-section hidden">
+                    <div class="msg-container">
+                        <div class="msg-list" id="msg-threads">
+                            <!-- Threads injected here -->
+                        </div>
+                        <div class="msg-window">
+                            <div id="chat-header" style="padding: 15px; border-bottom: 1px solid var(--border); font-weight: bold;">Select a conversation</div>
+                            <div id="chat-area" class="chat-area">
+                                <!-- Messages injected here -->
+                            </div>
+                            <div class="chat-input-area">
+                                <input type="text" id="chat-input" class="input-field" placeholder="Type a message..." disabled>
+                                <button class="btn btn-primary" id="chat-send-btn" onclick="app.messages.send()" disabled>Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. PROFILE -->
+                <div id="view-profile" class="view-section hidden">
+                    <div class="card flex flex-col items-center">
+                        <img id="profile-img-lg" src="" class="avatar-lg" style="margin-bottom: 15px;">
+                        <h2 id="profile-name">Username</h2>
+                        <p id="profile-bio" class="text-muted text-center" style="max-width: 400px; margin: 10px 0;">Bio goes here</p>
+                        <div id="profile-tags" class="tags"></div>
+                        <button class="btn btn-outline" onclick="app.router.go('settings')">Edit Profile</button>
+                    </div>
+                    <h3 style="margin: 20px 0;">My Activity</h3>
+                    <div id="profile-activity">
+                        <!-- User's posts -->
+                    </div>
+                </div>
+
+                <!-- 5. SETTINGS -->
+                <div id="view-settings" class="view-section hidden">
+                    <div class="card">
+                        <h3>Account Settings</h3>
+                        <br>
+                        <div class="input-group">
+                            <label>Bio</label>
+                            <textarea id="set-bio" class="input-field"></textarea>
+                        </div>
+                        <div class="input-group">
+                            <label>Skills/Interests (comma separated)</label>
+                            <input type="text" id="set-skills" class="input-field">
+                        </div>
+                        <div class="input-group">
+                            <label>Profile Image URL</label>
+                            <input type="text" id="set-avatar" class="input-field">
+                        </div>
+                        <button class="btn btn-primary" onclick="app.settings.save()">Save Changes</button>
+                    </div>
+                    <br>
+                    <div class="card">
+                        <h3>Preferences</h3>
+                        <br>
+                        <div class="flex items-center gap-4">
+                            <span>Dark Mode</span>
+                            <button class="btn btn-outline" onclick="document.body.classList.toggle('dark-mode'); app.settings.toggleTheme()">Toggle</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // === CORE APP LOGIC ===
+        
+        const app = {
+            data: {
+                users: [],
+                posts: [],
+                messages: [],
+                currentUser: null
+            },
+            
+            init: function() {
+                // Load data from LocalStorage or Seed
+                this.storage.load();
+                
+                // Check Session
+                const sessionUser = sessionStorage.getItem('forger_user');
+                if(sessionUser) {
+                    this.data.currentUser = JSON.parse(sessionUser);
+                    this.router.go('dashboard');
+                } else {
+                    this.router.go('landing');
+                }
+            },
+
+            // --- STORAGE MANAGER ---
+            storage: {
+                load: function() {
+                    if(!localStorage.getItem('forger_users')) {
+                        // Seed Data if empty
+                        app.data.users = [
+                            {id: 1, username: 'AlexDev', email: 'alex@test.com', password: '123', bio: 'Fullstack developer learning AI.', skills: ['JS', 'Python'], avatar: 'https://ui-avatars.com/api/?name=Alex+Dev&background=random'},
+                            {id: 2, username: 'SarahDesign', email: 'sarah@test.com', password: '123', bio: 'UI/UX Designer and Artist.', skills: ['Figma', 'CSS'], avatar: 'https://ui-avatars.com/api/?name=Sarah+D&background=random'}
+                        ];
+                        app.data.posts = [
+                            {id: 1, userId: 1, title: 'Best resources for learning JS?', content: 'I am looking for good resources to master Vanilla JavaScript. Any tips?', timestamp: Date.now(), likes: [], comments: []}
+                        ];
+                        this.save();
+                    } else {
+                        app.data.users = JSON.parse(localStorage.getItem('forger_users'));
+                        app.data.posts = JSON.parse(localStorage.getItem('forger_posts')) || [];
+                        app.data.messages = JSON.parse(localStorage.getItem('forger_messages')) || [];
+                    }
+                },
+                save: function() {
+                    localStorage.setItem('forger_users', JSON.stringify(app.data.users));
+                    localStorage.setItem('forger_posts', JSON.stringify(app.data.posts));
+                    localStorage.setItem('forger_messages', JSON.stringify(app.data.messages));
+                }
+            },
+
+            // --- ROUTER ---
+            router: {
+                go: function(viewName, subView = null) {
+                    // Hide all major sections
+                    document.getElementById('landing-view').classList.add('hidden');
+                    document.getElementById('auth-view').classList.add('hidden');
+                    document.getElementById('app-view').classList.add('hidden');
+
+                    if(viewName === 'landing') {
+                        document.getElementById('landing-view').classList.remove('hidden');
+                    } else if (viewName === 'auth') {
+                        document.getElementById('auth-view').classList.remove('hidden');
+                        app.auth.setMode(subView);
+                    } else {
+                        // Protected Routes
+                        if(!app.data.currentUser) { app.router.go('auth', 'login'); return; }
+                        
+                        document.getElementById('app-view').classList.remove('hidden');
+                        app.ui.renderSidebar();
+                        
+                        // Handle Internal Pages
+                        document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+                        if(viewName === 'dashboard') {
+                            document.getElementById('view-dashboard').classList.remove('hidden');
+                            document.getElementById('page-title').innerText = 'Questions Feed';
+                            app.posts.render();
+                        } else if (viewName === 'explore') {
+                            document.getElementById('view-explore').classList.remove('hidden');
+                            document.getElementById('page-title').innerText = 'Explore Community';
+                            app.explore.render();
+                        } else if (viewName === 'messages') {
+                            document.getElementById('view-messages').classList.remove('hidden');
+                            document.getElementById('page-title').innerText = 'Messages';
+                            app.messages.renderThreads();
+                        } else if (viewName === 'profile') {
+                            document.getElementById('view-profile').classList.remove('hidden');
+                            document.getElementById('page-title').innerText = 'My Profile';
+                            app.profile.render(app.data.currentUser.id);
+                        } else if (viewName === 'settings') {
+                            document.getElementById('view-settings').classList.remove('hidden');
+                            document.getElementById('page-title').innerText = 'Settings';
+                            app.settings.render();
+                        }
+                    }
+                }
+            },
+
+            // --- AUTH MODULE ---
+            auth: {
+                isSignup: false,
+                setMode: function(mode) {
+                    this.isSignup = mode === 'signup';
+                    const title = document.getElementById('auth-title');
+                    const form = document.getElementById('auth-form');
+                    const switchLink = document.getElementById('auth-switch-link');
+                    
+                    if(this.isSignup) {
+                        title.innerText = "Create Account";
+                        document.getElementById('email-group').classList.remove('hidden');
+                        document.getElementById('confirm-group').classList.remove('hidden');
+                        document.getElementById('auth-submit-btn').innerText = "Sign Up";
+                        document.getElementById('auth-switch-text').innerText = "Already have an account? ";
+                        switchLink.innerText = "Login here";
+                    } else {
+                        title.innerText = "Sign In";
+                        document.getElementById('email-group').classList.add('hidden');
+                        document.getElementById('confirm-group').classList.add('hidden');
+                        document.getElementById('auth-submit-btn').innerText = "Login";
+                        document.getElementById('auth-switch-text').innerText = "New here? ";
+                        switchLink.innerText = "Create an account";
+                    }
+                    document.getElementById('auth-error').innerText = "";
+                },
+                toggleMode: function() {
+                    this.setMode(this.isSignup ? 'login' : 'signup');
+                },
+                handleSubmit: function(e) {
+                    e.preventDefault();
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    const errorBox = document.getElementById('auth-error');
+
+                    if(this.isSignup) {
+                        const email = document.getElementById('email').value;
+                        const confirm = document.getElementById('confirm-password').value;
+                        
+                        if(password !== confirm) { errorBox.innerText = "Passwords do not match."; return; }
+                        if(app.data.users.find(u => u.username === username)) { errorBox.innerText = "Username taken."; return; }
+
+                        const newUser = {
+                            id: Date.now(),
+                            username, email, password,
+                            bio: 'Just joined Forger!',
+                            skills: [],
+                            avatar: `https://ui-avatars.com/api/?name=${username}&background=random`
+                        };
+                        app.data.users.push(newUser);
+                        app.storage.save();
+                        this.loginUser(newUser);
+
+                    } else {
+                        const user = app.data.users.find(u => u.username === username && u.password === password);
+                        if(user) {
+                            this.loginUser(user);
+                        } else {
+                            errorBox.innerText = "Invalid credentials.";
+                        }
+                    }
+                },
+                loginUser: function(user) {
+                    app.data.currentUser = user;
+                    sessionStorage.setItem('forger_user', JSON.stringify(user));
+                    document.getElementById('auth-form').reset();
+                    app.router.go('dashboard');
+                },
+                logout: function() {
+                    app.data.currentUser = null;
+                    sessionStorage.removeItem('forger_user');
+                    app.router.go('landing');
+                }
+            },
+
+            // --- UI HELPERS ---
+            ui: {
+                renderSidebar: function() {
+                    document.getElementById('nav-avatar').src = app.data.currentUser.avatar;
+                    document.getElementById('post-input-avatar').src = app.data.currentUser.avatar;
+                },
+                formatDate: function(timestamp) {
+                    return new Date(timestamp).toLocaleDateString() + ' ' + new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+            },
+
+            // --- POSTS MODULE ---
+            posts: {
+                render: function() {
+                    const container = document.getElementById('feed-container');
+                    container.innerHTML = '';
+                    // Sort new first
+                    const sortedPosts = [...app.data.posts].sort((a,b) => b.timestamp - a.timestamp);
+                    
+                    sortedPosts.forEach(post => {
+                        const author = app.data.users.find(u => u.id === post.userId) || {username: 'Unknown', avatar: ''};
+                        const isLiked = post.likes.includes(app.data.currentUser.id);
+                        
+                        const html = `
+                            <div class="card post-card">
+                                <div class="post-header flex items-center gap-4">
+                                    <img src="${author.avatar}" class="avatar">
+                                    <div>
+                                        <div style="font-weight:bold">${author.username}</div>
+                                        <div style="font-size:0.8rem; color:var(--text-muted)">${app.ui.formatDate(post.timestamp)}</div>
+                                    </div>
+                                </div>
+                                <div class="post-title">${post.title}</div>
+                                <div class="post-body">${post.content}</div>
+                                <div class="post-actions">
+                                    <div class="action-btn" onclick="app.posts.toggleLike(${post.id})" style="${isLiked ? 'color:var(--primary)' : ''}">
+                                        <span>${isLiked ? '❤️' : '🤍'}</span> ${post.likes.length} Likes
+                                    </div>
+                                    <div class="action-btn">
+                                        <span>💬</span> ${post.comments.length} Comments
+                                    </div>
+                                </div>
+                                ${post.comments.length > 0 ? `<div class="comments-section">
+                                    <strong>Last Comment:</strong> ${post.comments[post.comments.length-1].text}
+                                </div>` : ''}
+                                <div class="flex gap-2" style="margin-top:10px;">
+                                    <input type="text" id="comment-${post.id}" class="input-field" placeholder="Write a comment..." style="font-size:0.9rem; padding: 5px;">
+                                    <button class="btn btn-primary" onclick="app.posts.comment(${post.id})">Send</button>
+                                </div>
+                            </div>
+                        `;
+                        container.innerHTML += html;
+                    });
+                },
+                create: function() {
+                    const title = document.getElementById('new-post-title').value;
+                    const content = document.getElementById('new-post-content').value;
+                    if(!title || !content) return alert("Please fill fields");
+
+                    const newPost = {
+                        id: Date.now(),
+                        userId: app.data.currentUser.id,
+                        title,
+                        content,
+                        timestamp: Date.now(),
+                        likes: [],
+                        comments: []
+                    };
+                    app.data.posts.unshift(newPost);
+                    app.storage.save();
+                    document.getElementById('new-post-title').value = '';
+                    document.getElementById('new-post-content').value = '';
+                    this.render();
+                    app.notifications.add("Post created successfully!");
+                },
+                toggleLike: function(postId) {
+                    const post = app.data.posts.find(p => p.id === postId);
+                    const uid = app.data.currentUser.id;
+                    if(post.likes.includes(uid)) {
+                        post.likes = post.likes.filter(id => id !== uid);
+                    } else {
+                        post.likes.push(uid);
+                    }
+                    app.storage.save();
+                    this.render();
+                },
+                comment: function(postId) {
+                    const input = document.getElementById(`comment-${postId}`);
+                    if(!input.value) return;
+                    const post = app.data.posts.find(p => p.id === postId);
+                    post.comments.push({
+                        userId: app.data.currentUser.id,
+                        text: input.value,
+                        timestamp: Date.now()
+                    });
+                    app.storage.save();
+                    this.render();
+                }
+            },
+
+            // --- EXPLORE MODULE ---
+            explore: {
+                render: function() {
+                    this.renderList(app.data.users);
+                },
+                renderList: function(list) {
+                    const grid = document.getElementById('users-grid');
+                    grid.innerHTML = '';
+                    list.forEach(user => {
+                        if(user.id === app.data.currentUser.id) return; // Don't show self
+                        const html = `
+                            <div class="card user-card">
+                                <img src="${user.avatar}" class="avatar-lg">
+                                <h3>${user.username}</h3>
+                                <span>${user.bio.substring(0, 50)}...</span>
+                                <div class="tags">
+                                    ${user.skills.map(s => `<span class="tag">${s}</span>`).join('')}
+                                </div>
+                                <button class="btn btn-outline" onclick="app.messages.startChat(${user.id})">Message</button>
+                            </div>
+                        `;
+                        grid.innerHTML += html;
+                    });
+                },
+                search: function(query) {
+                    const term = query.toLowerCase();
+                    const filtered = app.data.users.filter(u => 
+                        u.username.toLowerCase().includes(term) || 
+                        u.skills.some(s => s.toLowerCase().includes(term))
+                    );
+                    this.renderList(filtered);
+                }
+            },
+
+            // --- MESSAGES MODULE ---
+            messages: {
+                activeChatUserId: null,
+                
+                renderThreads: function() {
+                    const list = document.getElementById('msg-threads');
+                    list.innerHTML = '';
+                    
+                    // Find users we have chatted with
+                    const myId = app.data.currentUser.id;
+                    const uniqueUserIds = new Set();
+                    app.data.messages.forEach(m => {
+                        if(m.senderId === myId) uniqueUserIds.add(m.receiverId);
+                        if(m.receiverId === myId) uniqueUserIds.add(m.senderId);
+                    });
+
+                    if(uniqueUserIds.size === 0) list.innerHTML = '<div style="padding:20px; text-align:center; color:#999">No conversations yet.</div>';
+
+                    uniqueUserIds.forEach(uid => {
+                        const user = app.data.users.find(u => u.id === uid);
+                        if(!user) return;
+                        
+                        // Last message
+                        const userMsgs = app.data.messages.filter(m => 
+                            (m.senderId === myId && m.receiverId === uid) || 
+                            (m.senderId === uid && m.receiverId === myId)
+                        ).sort((a,b) => b.timestamp - a.timestamp);
+                        
+                        const lastMsg = userMsgs[0] ? userMsgs[0].content : '';
+
+                        const html = `
+                            <div class="msg-thread" onclick="app.messages.openChat(${uid})">
+                                <img src="${user.avatar}" class="avatar">
+                                <div>
+                                    <div style="font-weight:bold">${user.username}</div>
+                                    <div style="font-size:0.8rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:150px;">${lastMsg}</div>
+                                </div>
+                            </div>
+                        `;
+                        list.innerHTML += html;
+                    });
+                },
+                startChat: function(userId) {
+                    app.router.go('messages');
+                    this.openChat(userId);
+                },
+                openChat: function(userId) {
+                    this.activeChatUserId = userId;
+                    const user = app.data.users.find(u => u.id === userId);
+                    document.getElementById('chat-header').innerText = user.username;
+                    document.getElementById('chat-input').disabled = false;
+                    document.getElementById('chat-send-btn').disabled = false;
+                    document.getElementById('chat-input').focus();
+                    this.renderChatWindow();
+                },
+                renderChatWindow: function() {
+                    const area = document.getElementById('chat-area');
+                    area.innerHTML = '';
+                    if(!this.activeChatUserId) return;
+
+                    const myId = app.data.currentUser.id;
+                    const otherId = this.activeChatUserId;
+
+                    const thread = app.data.messages.filter(m => 
+                        (m.senderId === myId && m.receiverId === otherId) || 
+                        (m.senderId === otherId && m.receiverId === myId)
+                    ).sort((a,b) => a.timestamp - b.timestamp);
+
+                    thread.forEach(msg => {
+                        const isMe = msg.senderId === myId;
+                        const div = document.createElement('div');
+                        div.className = `message-bubble ${isMe ? 'msg-me' : 'msg-other'}`;
+                        div.innerText = msg.content;
+                        area.appendChild(div);
+                    });
+                    area.scrollTop = area.scrollHeight; // Scroll to bottom
+                },
+                send: function() {
+                    const input = document.getElementById('chat-input');
+                    const text = input.value;
+                    if(!text || !this.activeChatUserId) return;
+
+                    app.data.messages.push({
+                        id: Date.now(),
+                        senderId: app.data.currentUser.id,
+                        receiverId: this.activeChatUserId,
+                        content: text,
+                        timestamp: Date.now()
+                    });
+                    app.storage.save();
+                    input.value = '';
+                    this.renderChatWindow();
+                    this.renderThreads(); // Update sidebar preview
+                }
+            },
+
+            // --- PROFILE MODULE ---
+            profile: {
+                render: function(userId) {
+                    const user = app.data.users.find(u => u.id === userId);
+                    document.getElementById('profile-name').innerText = user.username;
+                    document.getElementById('profile-bio').innerText = user.bio;
+                    document.getElementById('profile-img-lg').src = user.avatar;
+                    document.getElementById('profile-tags').innerHTML = user.skills.map(s => `<span class="tag">${s}</span>`).join('');
+                    
+                    const actContainer = document.getElementById('profile-activity');
+                    actContainer.innerHTML = '';
+                    const userPosts = app.data.posts.filter(p => p.userId === userId);
+                    if(userPosts.length === 0) actContainer.innerHTML = '<p class="text-center text-muted">No posts yet.</p>';
+                    
+                    userPosts.forEach(p => {
+                        actContainer.innerHTML += `
+                            <div class="card" style="margin-bottom:10px; padding:15px;">
+                                <strong>${p.title}</strong><br>
+                                <span class="text-muted" style="font-size:0.8rem">${new Date(p.timestamp).toLocaleDateString()}</span>
+                            </div>
+                        `;
+                    });
+                }
+            },
+
+            // --- NOTIFICATIONS ---
+            notifications: {
+                list: [],
+                add: function(msg) {
+                    this.list.unshift({text: msg, time: Date.now()});
+                    this.render();
+                },
+                render: function() {
+                    const el = document.getElementById('notif-list');
+                    const badge = document.getElementById('notif-count');
+                    badge.innerText = this.list.length;
+                    el.innerHTML = '';
+                    if(this.list.length === 0) {
+                        el.innerHTML = '<div class="notif-item text-muted">No new notifications</div>';
+                        return;
+                    }
+                    this.list.forEach(n => {
+                        el.innerHTML += `<div class="notif-item">${n.text}</div>`;
+                    });
+                }
+            },
+
+            // --- SETTINGS ---
+            settings: {
+                render: function() {
+                    const user = app.data.currentUser;
+                    document.getElementById('set-bio').value = user.bio;
+                    document.getElementById('set-skills').value = user.skills.join(', ');
+                    document.getElementById('set-avatar').value = user.avatar;
+                },
+                save: function() {
+                    const user = app.data.currentUser;
+                    user.bio = document.getElementById('set-bio').value;
+                    const skillsStr = document.getElementById('set-skills').value;
+                    user.skills = skillsStr.split(',').map(s => s.trim()).filter(s => s !== '');
+                    user.avatar = document.getElementById('set-avatar').value;
+                    
+                    // Update main user list
+                    const idx = app.data.users.findIndex(u => u.id === user.id);
+                    app.data.users[idx] = user;
+                    
+                    app.storage.save();
+                    sessionStorage.setItem('forger_user', JSON.stringify(user));
+                    alert("Profile updated!");
+                    app.router.go('profile');
+                },
+                toggleTheme: function() {
+                    // Just purely visual for this demo
+                }
+            }
+        };
+
+        // Initialize App on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+
+    </script>
+</body>
+</html>
